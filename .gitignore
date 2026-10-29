@@ -1,0 +1,10 @@
+# suas corridas (gerado a partir da exportação do Garmin) e o zip que você colocar em importar/
+dados/
+importar/*
+!importar/.gitkeep
+
+# malha de ruas baixada do OpenStreetMap
+osm-*.json
+
+__pycache__/
+.venv/

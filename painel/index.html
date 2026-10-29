@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de corridas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body data-estado="mapa">
+<div id="cena"></div>
+<div class="vinheta"></div>
+
+<header class="numeros vidro" id="numeros"></header>
+
+<aside class="coluna esq">
+  <section class="cartao vidro"><h2 id="pace-titulo"></h2><svg class="grafico" id="hist"></svg></section>
+  <section class="cartao vidro" id="c-descanso"><h2 id="descanso-titulo"></h2><svg class="grafico" id="dispersao"></svg><p class="legenda-eixo">Bateria corporal ao acordar</p></section>
+  <button class="botao" id="ver-analises">Ver todas as análises<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+</aside>
+
+<aside class="coluna dir">
+  <section class="cartao vidro"><h2>Extremos</h2><div class="lista" id="extremos"></div></section>
+  <section class="cartao vidro" id="c-trechos"><h2>Trechos frequentes</h2><div class="lista" id="trechos"></div></section>
+</aside>
+
+<div class="ficha vidro" id="ficha" aria-live="polite"></div>
+
+<footer class="tempo vidro">
+  <button class="play" id="play" aria-label="Reproduzir as corridas em ordem"><svg viewBox="0 0 24 24"><path id="play-icone" d="M8 5v14l11-7z"/></svg></button>
+  <div class="trilha" id="trilha"><svg id="tiques"></svg><div class="meses" id="meses"></div><div class="dica-tempo" id="dica-tempo"></div></div>
+  <div class="escala-pace" id="escala-pace"></div>
+  <button class="botao" id="hoje">Hoje</button>
+</footer>
+
+<section class="analises" id="analises" aria-label="Todas as análises">
+  <div class="analises-topo"><h1>Todas as análises</h1><button class="botao" id="fechar-analises">Voltar ao mapa</button></div>
+  <div class="analises-grade" id="analises-grade"></div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

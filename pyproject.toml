@@ -1,0 +1,6 @@
+[project]
+name = "dashboard-de-corridas"
+version = "0.1.0"
+description = "Painel das suas corridas do Garmin: mapa 3D, ruas corridas e análises."
+requires-python = ">=3.10"
+dependencies = ["fitdecode"]

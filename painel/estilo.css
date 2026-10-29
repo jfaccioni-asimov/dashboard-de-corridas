@@ -1,0 +1,148 @@
+/* Painel de corridas. */
+:root {
+  --noite: #07060d;
+  --vidro: linear-gradient(160deg, rgba(24, 20, 40, .74), rgba(14, 11, 26, .66));
+  --borda: rgba(255, 255, 255, .08); --borda-forte: rgba(255, 255, 255, .16); --grade: rgba(255, 255, 255, .06);
+  --texto: #f4f2fa; --texto-2: #b9b4c9; --texto-3: #a19bb5;  /* título e número / rótulo / eixo e metadado */
+  --roxo: #8b5cf6; --lilas: #c4b5fd; --rapido: #2dd4bf; --lento: #fb923c;
+  --sel-fundo: rgba(139, 92, 246, .14); --sel-borda: rgba(167, 139, 250, .55);
+  /* escala de 4 px; texto: 11 eixo e metadado, 12 rótulo, 13 corpo, 15 título de cartão, 22 número */
+  --t-xs: 11px; --t-sm: 12px; --t-md: 13px; --t-lg: 15px; --t-xl: 22px;
+  --r-painel: 14px; --r-controle: 8px;
+  --margem: 16px; --gap: 12px; --topo: 96px; --base: 104px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--noite); color: var(--texto); font: 400 var(--t-md)/1.4 Geist, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+svg text { font-family: Geist, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+
+/* a cena 3D ocupa a tela inteira, atrás de tudo */
+#cena { position: fixed; inset: 0; transition: filter .8s ease; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none !important; }
+.vinheta { position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 52%, transparent 45%, rgba(7, 6, 13, .55) 75%, rgba(7, 6, 13, .92) 100%),
+              linear-gradient(rgba(7, 6, 13, .7), transparent 15%, transparent 82%, rgba(7, 6, 13, .85)); }
+
+/* painel de vidro: o mesmo material em tudo */
+.vidro { background: var(--vidro); border: 1px solid var(--borda); border-radius: var(--r-painel);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 24px 60px -40px #000; }
+.cartao { padding: 14px 16px; }
+.cartao > h2 { margin: 0 0 10px; font-size: var(--t-lg); font-weight: 600; line-height: 1.25; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legenda-eixo { margin: 4px 0 0; font-size: var(--t-xs); color: var(--texto-3); }
+
+/* faixa de cima: nome do painel e os números */
+.numeros { position: fixed; top: var(--margem); left: var(--margem); right: var(--margem); height: 64px; z-index: 4;
+  display: grid; grid-template-columns: auto repeat(7, minmax(0, 1fr)); align-items: center; }
+.numeros > div { padding: 0 20px; border-left: 1px solid var(--borda); min-width: 0; }
+.numeros > div:first-child { border: 0; }
+.numeros .marca { font-size: var(--t-lg); font-weight: 600; white-space: nowrap; }
+.numeros .marca span { display: block; font-size: var(--t-xs); font-weight: 400; color: var(--texto-3); margin-top: 2px; }
+.numeros b { display: block; font-size: var(--t-xl); font-weight: 600; line-height: 1; letter-spacing: -.01em; white-space: nowrap; }
+.numeros b small { font-size: var(--t-sm); font-weight: 400; color: var(--texto-3); margin-left: 3px; letter-spacing: 0; }
+.numeros span { display: block; font-size: var(--t-xs); color: var(--texto-3); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* colunas de cartões */
+.coluna { position: fixed; top: var(--topo); display: grid; gap: var(--gap); align-content: start; z-index: 3;
+  max-height: calc(100vh - var(--topo) - var(--base) - var(--gap)); overflow: auto; scrollbar-width: none; }
+.coluna.esq { left: var(--margem); width: 280px; }
+.coluna.dir { right: var(--margem); width: 280px; }
+.grafico { display: block; width: 100%; }
+#hist { height: 92px; } #dispersao { height: 150px; }
+.lista { display: grid; margin: 0 -8px; }
+.lista button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; background: none;
+  border: 1px solid transparent; border-radius: var(--r-controle); padding: 6px 8px; }
+.lista button:hover { background: rgba(255, 255, 255, .04); }
+.lista button[aria-pressed="true"] { background: var(--sel-fundo); border-color: var(--sel-borda); }
+.lista span { font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lista span small { display: block; font-size: var(--t-xs); color: var(--texto-3); margin-top: 2px; }
+.lista b { font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.lista b small { font-weight: 400; font-size: var(--t-xs); color: var(--texto-3); margin-left: 2px; }
+
+
+/* botão secundário: o mesmo em todo lugar */
+.botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: var(--r-controle);
+  border: 1px solid var(--borda-forte); background: rgba(255, 255, 255, .03); color: var(--texto-2); font-size: var(--t-sm); font-weight: 500; white-space: nowrap; }
+.botao:hover { color: var(--texto); border-color: rgba(255, 255, 255, .28); }
+.botao[aria-pressed="true"] { color: var(--texto); background: rgba(139, 92, 246, .3); border-color: var(--sel-borda); }
+.botao svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.coluna .botao { width: 100%; height: 40px; justify-content: space-between; background: var(--vidro); }
+
+/* ficha da corrida: presa à linha do tempo, logo acima da corrida marcada */
+.ficha { position: fixed; bottom: calc(var(--base) + 10px); left: 0; z-index: 4; display: flex; flex-direction: column; gap: 12px; padding: 12px 18px; white-space: nowrap;
+  transition: left .35s cubic-bezier(.2, .7, .2, 1), opacity .3s ease; }
+.ficha::after { content: ""; position: absolute; left: var(--seta, 50%); bottom: -7px; width: 12px; height: 12px; margin-left: -6px; transform: rotate(45deg);
+  background: rgba(16, 13, 29, .95); border-right: 1px solid var(--borda); border-bottom: 1px solid var(--borda); }
+.ficha .linha1 { display: flex; align-items: center; gap: 24px; }
+.ficha .tocador { display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid var(--borda); }
+.ficha .tocador .grafico { width: 520px; height: 104px; cursor: crosshair; }
+.play.pequeno { width: 32px; height: 32px; } .play.pequeno svg { width: 14px; height: 14px; }
+.ficha .cab b { display: block; font-size: var(--t-md); font-weight: 600; }
+.ficha .cab span { display: block; font-size: var(--t-xs); color: var(--texto-3); margin-top: 2px; }
+.ficha .m b { display: block; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ficha .m b i { font-style: normal; }
+.ficha .m b small { font-size: var(--t-xs); font-weight: 400; color: var(--texto-3); margin-left: 2px; }
+.ficha .m span { font-size: var(--t-xs); color: var(--texto-3); }
+
+/* linha do tempo: um traço por corrida (altura pelos km, cor pelo pace); passar o mouse aproxima, clicar escolhe */
+.tempo { position: fixed; left: var(--margem); right: var(--margem); bottom: var(--margem); height: 76px; z-index: 30;
+  display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+.play { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--roxo); display: grid; place-items: center; }
+.play:hover { background: #9d74ff; }
+.play svg { width: 18px; height: 18px; fill: #fff; }
+.trilha { position: relative; flex: 1; align-self: stretch; margin: 0 8px; cursor: pointer; }
+#tiques { position: absolute; left: 0; right: 0; top: 4px; width: 100%; height: 50px; overflow: visible; }
+#tiques rect { transition: opacity .12s ease; }
+.meses { position: absolute; left: 0; right: 0; bottom: 6px; height: 14px; font-size: var(--t-xs); color: var(--texto-3); pointer-events: none; }
+.meses span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.dica-tempo { position: absolute; bottom: calc(100% + 6px); transform: translateX(-50%); padding: 6px 10px; border-radius: var(--r-controle); pointer-events: none;
+  background: rgba(16, 13, 29, .96); border: 1px solid var(--borda-forte); font-size: var(--t-sm); white-space: nowrap; opacity: 0; transition: opacity .12s ease; }
+.dica-tempo b { font-weight: 600; } .dica-tempo span { color: var(--texto-3); margin-left: 6px; }
+.trilha:hover .dica-tempo { opacity: 1; }
+.escala-pace { flex: none; display: grid; gap: 4px; font-size: var(--t-xs); color: var(--texto-3); }
+.escala-pace i { display: block; width: 88px; height: 4px; border-radius: 2px; }
+.escala-pace div { display: flex; justify-content: space-between; }
+
+/* passar o mouse no mapa: quantas corridas passaram ali; clicar abre a lista */
+.dica-mapa { position: fixed; z-index: 8; pointer-events: none; padding: 8px 12px; border-radius: var(--r-controle); background: rgba(16, 13, 29, .94);
+  border: 1px solid var(--borda-forte); opacity: 0; transition: opacity .12s ease; white-space: nowrap; }
+.dica-mapa b { display: block; font-size: var(--t-md); font-weight: 600; } .dica-mapa span { font-size: var(--t-xs); color: var(--texto-3); }
+.lista-mapa .maplibregl-popup-content { background: rgba(16, 13, 29, .96); border: 1px solid var(--borda-forte); border-radius: var(--r-painel); padding: 12px 8px 8px; color: var(--texto); box-shadow: 0 24px 60px -30px #000; }
+.lista-mapa .maplibregl-popup-tip { display: none; }
+.lista-mapa h3 { margin: 0 8px 8px; font-size: var(--t-md); font-weight: 600; }
+.lista-mapa .lista { margin: 0; max-height: 260px; overflow: auto; scrollbar-width: thin; }
+.lista-mapa .lista button { color: var(--texto); font: inherit; }
+
+/* todas as análises: o mapa escurece e desfoca; os oito cartões entram em cascata */
+.analises { position: fixed; top: var(--topo); left: var(--margem); right: var(--margem); bottom: calc(var(--base) + var(--gap)); z-index: 6;
+  display: flex; flex-direction: column; gap: var(--gap); pointer-events: none; opacity: 0; transition: opacity .3s ease; }
+.analises-topo { display: flex; align-items: center; justify-content: space-between; }
+.analises-topo h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.analises-grade { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.analises .cartao { display: flex; flex-direction: column; min-height: 0; opacity: 0; transform: translateY(16px); transition: opacity .4s ease, transform .55s cubic-bezier(.2, .7, .2, 1); }
+.analises .cartao .grafico { flex: 1; min-height: 0; }
+body[data-estado="analises"] #cena { filter: blur(6px) brightness(.42) saturate(.9); }
+body[data-estado="analises"] .analises { pointer-events: auto; opacity: 1; }
+body[data-estado="analises"] .analises .cartao { opacity: 1; transform: none; transition-delay: calc(.15s + var(--i, 0) * 50ms); }
+body[data-estado="analises"] :is(.coluna, .ficha, .maplibregl-marker) { opacity: 0; pointer-events: none; }
+
+/* transições dos painéis */
+:is(.numeros, .coluna, .tempo, .ficha) { transition: opacity .5s ease, transform .7s cubic-bezier(.2, .7, .2, 1), left .35s cubic-bezier(.2, .7, .2, 1); }
+
+/* entrada: cada peça chega do seu lado, uma depois da outra */
+body.entrando .numeros { opacity: 0; transform: translateY(-16px); }
+body.entrando .coluna.esq { opacity: 0; transform: translateX(-24px); }
+body.entrando .coluna.dir { opacity: 0; transform: translateX(24px); }
+body.entrando :is(.tempo, .ficha) { opacity: 0; transform: translateY(16px); }
+.numeros { transition-delay: .1s; } .coluna.esq, .coluna.dir { transition-delay: .25s; } .tempo { transition-delay: .35s; }
+
+.rotulo { color: var(--texto); white-space: nowrap; transform: translate(14px, -50%); }
+.rotulo b { display: block; font-size: 28px; font-weight: 600; line-height: 1; }
+.rotulo span { font-size: var(--t-sm); color: var(--texto-2); }
+.rotulo::before { content: ""; position: absolute; left: -14px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; border: 1px solid var(--lilas); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media (max-width: 1280px) { .numeros { grid-template-columns: auto repeat(4, minmax(0, 1fr)); } .numeros > div:nth-child(n+6) { display: none; }
+  .analises-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 300px; overflow: auto; } }
+@media (max-width: 1100px) { .coluna { display: none; } }
+[hidden] { display: none !important; }
